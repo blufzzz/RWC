@@ -1,6 +1,53 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import matplotlib.pyplot as plt
+from utils import to_numpy
+
+def one_epoch_pass(network, 
+                   optimizer,
+                   dataloader, 
+                   metrics, 
+                   loss_function, 
+                   metric_function, 
+                   train=True,
+                   update_stats=True, 
+                   imshow=False):
+    
+    CONTEXT = torch.enable_grad if train else torch.no_grad
+    
+    loss_history = []
+    metric_history = []
+    device = network.device
+    
+    for batch, target_batch in dataloader:
+
+        inpt = batch.to(device)
+        target_batch = target_batch.to(device)
+        
+        with CONTEXT():
+
+            _, output = network(inpt, update_statistics=update_stats) # [[X, Y, Y_f],...,[X, Y, Y_f]], [d,batch_size]
+            loss = loss_function(output.T, target_batch)
+            
+        if train:
+            
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        target_pred = output.argmax(0)
+        metric = metric_function(target_batch, target_pred)
+
+        loss_history.append(loss.item())
+        metric_history.append(metric)
+    
+    if imshow:
+        plt.figure()
+        plt.imshow(to_numpy(batch[-1].reshape(28,28)))
+        plt.show()
+        
+    return loss_history, metric_history
 
 def ls_loss(X,y,W,bias=False, onehot=True):
     y_oh = nn.functional.one_hot(y, num_classes=10).type(X.dtype)

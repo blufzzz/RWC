@@ -12,7 +12,12 @@ from mpl_toolkits.mplot3d.axes3d import Axes3D
 import matplotlib as mpl
 from IPython.core.debugger import set_trace
 
-
+def accuracy_per_class(target_test, target_pred):
+    acc_per_class = []
+    for k in target_test.unique():
+        mask = target_test == k
+        acc_per_class.append(accuracy(target_test[mask], target_pred[mask]))
+    return acc_per_class
 
 def r2_score_batch(label_all, Y_all):
     y_true = to_numpy(label_all)
@@ -103,8 +108,6 @@ def bn(x):
 
 def to_numpy(x):
     return x.detach().cpu().numpy()
-
-
 
 def gs_orthogonalization(*args):
     
